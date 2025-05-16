@@ -1,6 +1,7 @@
 const { OpenAI } = require('openai');
 const express = require('express');
 const app = express();
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -9,7 +10,9 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.get('/', (req, res) => res.send('API is live at LabhSoftware!'));
+app.get('/', (req, res) => {
+  res.send('API is live at LabhSoftware!');
+});
 
 app.post('/gmb/reply', async (req, res) => {
   const { review } = req.body;
