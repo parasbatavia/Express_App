@@ -1,6 +1,9 @@
 const { OpenAI } = require('openai');
 const express = require('express');
 const app = express();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
