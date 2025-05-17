@@ -3,20 +3,20 @@ const axios = require('axios');
 const qs = require('qs');
 const { OpenAI } = require('openai');
 const { google } = require('googleapis');
-const fs = require('fs');
 require('dotenv').config();
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 
 const port = process.env.PORT || 3000;
 
-// GPT-4 setup
+// GPT setup
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Google Sheets API setup
+// Google Sheets setup
 const auth = new google.auth.GoogleAuth({
   keyFile: 'credentials.json',
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -37,12 +37,12 @@ async function logToSheet(dataArray) {
   });
 }
 
-// ✅ Root test
+// Root route
 app.get('/', (req, res) => {
-  res.send('API is live at LabhSoftware!');
+  res.send('✅ LabhSoftware GMB API is live and ready!');
 });
 
-// ✅ GPT review reply
+// GPT reply endpoint
 app.post('/gmb/reply', async (req, res) => {
   const { review } = req.body;
 
@@ -73,7 +73,7 @@ app.post('/gmb/reply', async (req, res) => {
   }
 });
 
-// ✅ Process new reviews
+// Auto-process new GMB reviews
 app.get('/gmb/process-new', async (req, res) => {
   const access_token = process.env.GOOGLE_ACCESS_TOKEN;
   const accountId = process.env.GMB_ACCOUNT_ID;
@@ -81,7 +81,7 @@ app.get('/gmb/process-new', async (req, res) => {
 
   try {
     const reviewRes = await axios.get(
-      `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews`,
+      `https://mybusiness.googleapis.com/v4/${accountId}/${locationId}/reviews`,
       {
         headers: { Authorization: `Bearer ${access_token}` }
       }
@@ -104,7 +104,7 @@ app.get('/gmb/process-new', async (req, res) => {
       const aiReply = gptReplyRes.data.reply;
 
       await axios.put(
-        `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`,
+        `https://mybusiness.googleapis.com/v4/${accountId}/${locationId}/reviews/${reviewId}/reply`,
         { comment: aiReply },
         {
           headers: { Authorization: `Bearer ${access_token}` }
@@ -122,14 +122,14 @@ app.get('/gmb/process-new', async (req, res) => {
       replyCount++;
     }
 
-    res.send(`✅ Processed ${replyCount} new reviews.`);
+    res.send(`✅ Replied to ${replyCount} new reviews and logged to Google Sheet.`);
   } catch (err) {
     console.error("🚨 Error processing reviews:", err?.response?.data || err.message);
     res.status(500).send("Failed to process new reviews.");
   }
 });
 
-// ✅ OAuth login route
+// Google OAuth Login
 app.get('/oauth/login', (req, res) => {
   const client_id = process.env.GOOGLE_CLIENT_ID;
   const redirect_uri = "https://api.labhsoftware.com/oauth/callback";
@@ -143,45 +143,46 @@ app.get('/oauth/login', (req, res) => {
   res.redirect(authUrl);
 });
 
-// ✅ OAuth callback
+// Google OAuth Callback (Token visible in browser)
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
-  const client_id = process.env.GOOGLE_CLIENT_ID;
-  const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirect_uri = "https://api.labhsoftware.com/oauth/callback";
 
-  if (!code) return res.status(400).send('Missing auth code.');
+  if (!code) return res.status(400).send('❌ Missing authorization code.');
 
   try {
     const tokenResponse = await axios.post(
       'https://oauth2.googleapis.com/token',
       qs.stringify({
         code,
-        client_id,
-        client_secret,
-        redirect_uri,
-        grant_type: 'authorization_code',
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: "https://api.labhsoftware.com/oauth/callback",
+        grant_type: 'authorization_code'
       }),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       }
     );
 
     const { access_token, refresh_token } = tokenResponse.data;
 
-    console.log("✅ Access Token:", access_token);
-    console.log("🔁 Refresh Token:", refresh_token);
-
-    res.send("✅ Google authorization successful. You're ready to fetch reviews!");
-  } catch (error) {
-    console.error("OAuth callback error:", error.response?.data || error.message);
-    res.status(500).send("Failed to exchange code for tokens.");
+    res.send(`
+      <h2>✅ Google Authorization Successful!</h2>
+      <p><strong>Access Token:</strong></p><code>${access_token}</code>
+      <p><strong>Refresh Token:</strong></p><code>${refresh_token}</code>
+      <p>👉 Copy these into your <code>.env</code> file.</p>
+    `);
+  } catch (err) {
+    res.status(500).send(`
+      <h2>❌ Failed to retrieve tokens</h2>
+      <pre>${JSON.stringify(err.response?.data || err.message, null, 2)}</pre>
+    `);
   }
 });
 
-// ✅ Start server
+// Start server
 app.listen(port, () => {
-  console.log(`🚀 Server running at http://localhost:${port}`);
+  console.log(`🚀 Labh Software GMB API running at http://localhost:${port}`);
 });
