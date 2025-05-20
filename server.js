@@ -183,6 +183,8 @@ app.get('/oauth/callback', async (req, res) => {
 });
 
 // Start server
-app.listen(process.env.PORT || 10000, '0.0.0.0', () => {
-  console.log(`Server running`);
+const port = process.env.PORT || 10000;
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
 });
