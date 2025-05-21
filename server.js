@@ -185,7 +185,29 @@ app.get('/oauth/callback', async (req, res) => {
 
 // Start server
 const port = process.env.PORT || 10000;
-
+//gmb pending replies count 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
+});
+app.get('/gmb/pending-replies', async (req, res) => {
+  const access_token = process.env.GOOGLE_ACCESS_TOKEN;
+  const accountId = process.env.GMB_ACCOUNT_ID;
+  const locationId = process.env.GMB_LOCATION_ID;
+
+  try {
+    const reviewRes = await axios.get(
+      `https://mybusinessbusinessinformation.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews`,
+      {
+        headers: { Authorization: `Bearer ${access_token}` }
+      }
+    );
+
+    const reviews = reviewRes.data.reviews || [];
+    const pending = reviews.filter(review => !review.reviewReply);
+
+    res.send(`📝 Pending replies: ${pending.length}`);
+  } catch (err) {
+    console.error("🚨 Error fetching reviews:", err?.response?.data || err.message);
+    res.status(500).send("Failed to fetch pending replies.");
+  }
 });
