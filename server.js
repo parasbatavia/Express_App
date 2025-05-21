@@ -81,7 +81,7 @@ app.get('/gmb/process-new', async (req, res) => {
 
   try {
     const reviewRes = await axios.get(
-      `https://mybusiness.googleapis.com/v4/${accountId}/${locationId}/reviews`,
+      `GET https://mybusinessbusinessinformation.googleapis.com/v1/accounts/{accountId}/locations`,
       {
         headers: { Authorization: `Bearer ${access_token}` }
       }
@@ -104,10 +104,11 @@ app.get('/gmb/process-new', async (req, res) => {
       const aiReply = gptReplyRes.data.reply;
 
       await axios.put(
-        `https://mybusiness.googleapis.com/v4/${accountId}/${locationId}/reviews/${reviewId}/reply`,
+        `https://mybusinessbusinessinformation.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`,
         { comment: aiReply },
         {
-          headers: { Authorization: `Bearer ${access_token}` }
+          headers: { Authorization: `Bearer ${access_token}` ,
+          'Content-Type': 'application/json'}
         }
       );
 
