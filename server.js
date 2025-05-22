@@ -205,7 +205,7 @@ app.get('/gmb/pending-replies', async (req, res) => {
     const reviews = reviewRes.data.reviews || [];
     const pending = reviews.filter(review => !review.reviewReply);
 
-    res.send(`📝 Pending replies: ${pending.length}`);
+    res.json(pending);
   } catch (err) {
     console.error("🚨 Error fetching reviews:", err?.response?.data || err.message);
     res.status(500).send("Failed to fetch pending replies.");
