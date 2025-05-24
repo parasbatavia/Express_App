@@ -24,6 +24,7 @@ app.get('/auth', (req, res) => {
 });
 
 // === /oauth/callback route ===
+
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
@@ -37,7 +38,7 @@ app.get('/oauth/callback', async (req, res) => {
     });
     oauth2Client.setCredentials(tokens);
 
-    // List accounts with the correct API
+    // Use the correct Google My Business API for accounts
     const myBusiness = google.mybusiness({ version: 'v4', auth: oauth2Client });
     const accountsRes = await myBusiness.accounts.list();
     const accounts = accountsRes.data.accounts || [];
@@ -52,8 +53,6 @@ app.get('/oauth/callback', async (req, res) => {
     res.status(500).json({ error: 'OAuth failed', details: err.response?.data || err.message });
   }
 });
-
-oauth2Client.setCredentials(tokens);
 
     // Retrieve Google My Business account info
     const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: oauth2Client });
