@@ -1,8 +1,6 @@
 const express = require('express');
-const dotenv = require('dotenv');
+require('dotenv').config();
 const { google } = require('googleapis');
-
-dotenv.config();
 
 const app = express();
 
@@ -24,7 +22,6 @@ app.get('/auth', (req, res) => {
 });
 
 // === /oauth/callback route ===
-
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
@@ -38,26 +35,8 @@ app.get('/oauth/callback', async (req, res) => {
     });
     oauth2Client.setCredentials(tokens);
 
-    // Use the correct Google My Business API for accounts
     const myBusiness = google.mybusiness({ version: 'v4', auth: oauth2Client });
     const accountsRes = await myBusiness.accounts.list();
-    const accounts = accountsRes.data.accounts || [];
-
-    res.json({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      accounts: accounts
-    });
-  } catch (err) {
-    console.error('OAuth or Google API Error:', err.response?.data || err.message);
-    res.status(500).json({ error: 'OAuth failed', details: err.response?.data || err.message });
-  }
-});
-
-    // Retrieve Google My Business account info
-    const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: oauth2Client });
-    // This is the correct way to list accounts (per Google API docs)
-    const accountsRes = await businessInfo.accounts.list();
     const accounts = accountsRes.data.accounts || [];
 
     res.json({
