@@ -16,10 +16,12 @@ app.get('/auth', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: ['https://www.googleapis.com/auth/business.manage']
+    scope: ['https://www.googleapis.com/auth/business.manage'],
+    redirect_uri: process.env.REDIRECT_URI  // ✅ this fixes it
   });
   res.redirect(url);
 });
+
 
 // === /oauth/callback route ===
 app.get('/oauth/callback', async (req, res) => {
