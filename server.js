@@ -24,18 +24,34 @@ app.get('/auth', (req, res) => {
 
 
 // === /oauth/callback route ===
+
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
+
+  const { google } = require('googleapis');
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    process.env.REDIRECT_URI
+  );
+
   try {
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: process.env.REDIRECT_URI   // ✅ REQUIRED EXPLICITLY HERE
+    });
+
     console.log('✅ ACCESS TOKEN:', tokens.access_token);
     console.log('🔁 REFRESH TOKEN:', tokens.refresh_token);
-    res.send('✅ Auth Success! Check Render logs for tokens.');
-  } catch (error) {
-    console.error('❌ Error exchanging code:', error.response?.data || error.message);
+
+    res.send('✅ Google Auth Success! Check Render logs for tokens.');
+  } catch (err) {
+    console.error('❌ Token Exchange Error:', err.response?.data || err.message);
     res.status(500).send('OAuth failed');
   }
 });
+
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
