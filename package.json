@@ -1,7 +1,7 @@
 {
   "name": "my-express-backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "server_new.js",
   "scripts": {
     "start": "node server.js"
   },
