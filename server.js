@@ -27,32 +27,23 @@ app.get('/auth', (req, res) => {
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
-    console.error('OAuth Error: Missing "code" parameter in callback URL');
-    return res.status(400).json({ error: 'Missing "code" parameter in callback URL' });
+    return res.status(400).json({ error: 'Missing code parameter' });
   }
 
   try {
-    const { tokens } = await oauth2Client.getToken({
-      code,
-      redirect_uri: process.env.REDIRECT_URI
-    });
+    const { tokens } = await oauth2Client.getToken({ code, redirect_uri: process.env.REDIRECT_URI });
     oauth2Client.setCredentials(tokens);
 
-    console.log('✅ ACCESS TOKEN:', tokens.access_token);
-    console.log('🔁 REFRESH TOKEN:', tokens.refresh_token);
+    const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: oauth2Client });
+    const accountsRes = await businessInfo.accounts.list();
 
-    // ... proceed to retrieve Google Business data here ...
-
-    res.send('✅ Google Auth Success! Check Render logs for tokens.');
+    // ... rest of your data fetching logic ...
+    res.json({ accounts: accountsRes.data.accounts });
   } catch (err) {
-    console.error('❌ Token Exchange Error:', err.response?.data || err.message);
-    res.status(500).json({
-      error: 'OAuth failed',
-      details: err.response?.data || err.message
-    });
+    console.error('OAuth or Google API Error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'OAuth failed', details: err.response?.data || err.message });
   }
-});
-  
+});  
 
     // Step 3: List business accounts
     const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: tempOauth2Client });
