@@ -3,6 +3,14 @@ const dotenv = require('dotenv');
 const { google } = require('googleapis');
 
 dotenv.config();
+require('dotenv').config();
+
+console.log("CLIENT_ID loaded:", !!process.env.CLIENT_ID);
+console.log("CLIENT_SECRET loaded:", !!process.env.CLIENT_SECRET);
+console.log("REDIRECT_URI loaded:", process.env.REDIRECT_URI);
+
+
+
 const app = express();
 
 const oauth2Client = new google.auth.OAuth2(
