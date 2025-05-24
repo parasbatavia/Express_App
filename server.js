@@ -27,7 +27,6 @@ app.get('/auth', (req, res) => {
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
-    console.error('OAuth Error: Missing code parameter');
     return res.status(400).json({ error: 'Missing code parameter' });
   }
 
@@ -37,6 +36,24 @@ app.get('/oauth/callback', async (req, res) => {
       redirect_uri: process.env.REDIRECT_URI
     });
     oauth2Client.setCredentials(tokens);
+
+    // List accounts with the correct API
+    const myBusiness = google.mybusiness({ version: 'v4', auth: oauth2Client });
+    const accountsRes = await myBusiness.accounts.list();
+    const accounts = accountsRes.data.accounts || [];
+
+    res.json({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      accounts: accounts
+    });
+  } catch (err) {
+    console.error('OAuth or Google API Error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'OAuth failed', details: err.response?.data || err.message });
+  }
+});
+
+oauth2Client.setCredentials(tokens);
 
     // Retrieve Google My Business account info
     const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: oauth2Client });
