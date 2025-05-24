@@ -12,7 +12,7 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.REDIRECT_URI
 );
 
-// Step 1: Initiate Google OAuth flow
+// === /auth route ===
 app.get('/auth', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -23,60 +23,35 @@ app.get('/auth', (req, res) => {
   res.redirect(url);
 });
 
-// Step 2: Handle OAuth callback and fetch Google Business data
+// === /oauth/callback route ===
 app.get('/oauth/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
+    console.error('OAuth Error: Missing code parameter');
     return res.status(400).json({ error: 'Missing code parameter' });
   }
 
   try {
-    const { tokens } = await oauth2Client.getToken({ code, redirect_uri: process.env.REDIRECT_URI });
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: process.env.REDIRECT_URI
+    });
     oauth2Client.setCredentials(tokens);
 
+    // Retrieve Google My Business account info
     const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: oauth2Client });
+    // This is the correct way to list accounts (per Google API docs)
     const accountsRes = await businessInfo.accounts.list();
+    const accounts = accountsRes.data.accounts || [];
 
-    // ... rest of your data fetching logic ...
-    res.json({ accounts: accountsRes.data.accounts });
+    res.json({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      accounts: accounts
+    });
   } catch (err) {
     console.error('OAuth or Google API Error:', err.response?.data || err.message);
     res.status(500).json({ error: 'OAuth failed', details: err.response?.data || err.message });
-  }
-});  
-
-    // Step 3: List business accounts
-    const businessInfo = google.mybusinessbusinessinformation({ version: 'v1', auth: tempOauth2Client });
-    const accountsRes = await businessInfo.accounts.list();
-    const account = accountsRes.data.accounts && accountsRes.data.accounts[0];
-    if (!account) {
-      return res.status(404).send('No Google Business account found for this user.');
-    }
-
-    // Step 4: List locations under the account
-    const locationsRes = await businessInfo.accounts.locations.list({ parent: account.name });
-    const locations = locationsRes.data.locations;
-    if (!locations || locations.length === 0) {
-      return res.status(404).send('No locations found for this account.');
-    }
-
-    const locationName = locations[0].name; // e.g., 'locations/987654321'
-    const locationId = locationName;
-
-    // Step 5: Fetch reviews for the location (using My Business API v4)
-    const myBusiness = google.mybusiness({ version: 'v4', auth: tempOauth2Client });
-    const reviewsRes = await myBusiness.accounts.locations.reviews.list({ parent: locationName });
-    const reviews = reviewsRes.data.reviews || [];
-
-    // Step 6: Respond with account, location, and reviews
-    res.json({
-      account: account.name,
-      location: locationId,
-      reviews: reviews
-    });
-  } catch (err) {
-    console.error('Error:', err.response?.data || err.message);
-    res.status(500).send('Error retrieving Google Business data');
   }
 });
 
